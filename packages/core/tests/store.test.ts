@@ -719,4 +719,111 @@ describe('createAIStore', () => {
       expect(store.get('hasMessages')).toBe(false);
     });
   });
+
+  // 17. submit() with complete (non-streaming) response
+  describe('submit() with response (non-streaming)', () => {
+    it('completes with text from a complete response', async () => {
+      const store = createAIStore({ batchStrategy: 'sync' });
+
+      store.submit({
+        message: 'hello',
+        response: { text: 'Hi there!' },
+      });
+      await waitForStream();
+
+      expect(store.get('status')).toBe('complete');
+      expect(store.get('text')).toBe('Hi there!');
+      expect(store.get('messages').length).toBeGreaterThanOrEqual(2);
+    });
+
+    it('populates usage from a complete response', async () => {
+      const store = createAIStore({ batchStrategy: 'sync' });
+
+      store.submit({
+        response: {
+          text: 'result',
+          usage: { inputTokens: 100, outputTokens: 50 },
+        },
+      });
+      await waitForStream();
+
+      expect(store.get('usage')).not.toBeNull();
+      expect(store.get('usage')!.inputTokens).toBe(100);
+      expect(store.get('usage')!.outputTokens).toBe(50);
+    });
+
+    it('handles tool calls in a complete response', async () => {
+      const store = createAIStore({ batchStrategy: 'sync' });
+
+      store.submit({
+        response: {
+          toolCalls: [{ id: 'tc-1', name: 'search', input: { query: 'cats' } }],
+          finishReason: 'tool-calls',
+        },
+      });
+      await waitForStream();
+
+      expect(store.get('status')).toBe('complete');
+      expect(store.get('toolCalls')).toHaveLength(1);
+      expect(store.get('toolCalls')[0]!.name).toBe('search');
+      expect(store.get('toolCalls')[0]!.input).toEqual({ query: 'cats' });
+      expect(store.get('toolCalls')[0]!.status).toBe('complete');
+    });
+
+    it('handles structured object output', async () => {
+      const store = createAIStore({ batchStrategy: 'sync' });
+
+      store.submit({
+        response: {
+          text: 'Here are results',
+          object: { items: [{ name: 'cat', url: 'cat.jpg' }] },
+        },
+      });
+      await waitForStream();
+
+      expect(store.get('status')).toBe('complete');
+      expect(store.get('object')).toEqual({ items: [{ name: 'cat', url: 'cat.jpg' }] });
+    });
+
+    it('handles thinking content', async () => {
+      const store = createAIStore({ batchStrategy: 'sync' });
+
+      store.submit({
+        response: {
+          thinking: 'Let me reason about this...',
+          text: 'The answer is 42',
+        },
+      });
+      await waitForStream();
+
+      expect(store.get('thinking')).toBe('Let me reason about this...');
+      expect(store.get('text')).toBe('The answer is 42');
+    });
+
+    it('middleware intercepts response events', async () => {
+      const store = createAIStore({ batchStrategy: 'sync' });
+      const intercepted: StreamEvent[] = [];
+
+      store.use(async (ctx: MiddlewareContext, next: () => Promise<void>) => {
+        intercepted.push({ ...ctx.event });
+        await next();
+      });
+
+      store.submit({ response: { text: 'hello' } });
+      await waitForStream();
+
+      expect(intercepted.some((e) => e.type === 'text-delta')).toBe(true);
+      expect(intercepted.some((e) => e.type === 'finish')).toBe(true);
+    });
+
+    it('empty response still completes', async () => {
+      const store = createAIStore({ batchStrategy: 'sync' });
+
+      store.submit({ response: {} });
+      await waitForStream();
+
+      expect(store.get('status')).toBe('complete');
+      expect(store.get('text')).toBe('');
+    });
+  });
 });

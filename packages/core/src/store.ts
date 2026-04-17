@@ -3,6 +3,7 @@ import type {
   AIState,
   AIStoreOptions,
   BatchStrategy,
+  CompleteResponse,
   Message,
   Middleware,
   MiddlewareContext,
@@ -81,6 +82,28 @@ function isMiddlewareObject(mw: Middleware): mw is MiddlewareObject {
 function getOnEvent(mw: Middleware): MiddlewareFn | undefined {
   if (typeof mw === 'function') return mw;
   return mw.onEvent;
+}
+
+async function* responseToEvents(response: CompleteResponse): AsyncGenerator<StreamEvent> {
+  if (response.thinking) {
+    yield { type: 'thinking-delta', text: response.thinking };
+  }
+  if (response.text) {
+    yield { type: 'text-delta', text: response.text };
+  }
+  if (response.toolCalls) {
+    for (const tc of response.toolCalls) {
+      yield { type: 'tool-call-start', id: tc.id, name: tc.name };
+      yield { type: 'tool-call-end', id: tc.id, input: tc.input };
+    }
+  }
+  if (response.object !== undefined) {
+    yield { type: 'object-delta', text: '', partial: response.object };
+  }
+  if (response.usage) {
+    yield { type: 'usage', usage: response.usage };
+  }
+  yield { type: 'finish', reason: response.finishReason ?? 'stop' };
 }
 
 export function createAIStore<T = unknown>(options?: AIStoreOptions<T>): AIStore<T> {
@@ -338,7 +361,10 @@ export function createAIStore<T = unknown>(options?: AIStoreOptions<T>): AIStore
     });
 
     // Determine event source
-    if (input.events) {
+    if (input.response) {
+      // Complete (non-streaming) response — convert to events
+      consumeStream(responseToEvents(input.response), controller.signal);
+    } else if (input.events) {
       // Direct events — skip parsing
       consumeStream(input.events, controller.signal);
     } else if (input.stream) {

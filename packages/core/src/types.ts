@@ -200,11 +200,23 @@ export interface StreamHandle {
   signal: AbortSignal;
 }
 
+// ── Complete (non-streaming) response ──
+
+export interface CompleteResponse {
+  text?: string;
+  thinking?: string;
+  toolCalls?: { id: string; name: string; input: unknown }[];
+  object?: DeepPartial<unknown> | null;
+  usage?: Partial<TokenUsage>;
+  finishReason?: FinishReason;
+}
+
 // ── Submit input ──
 
 export interface SubmitInput {
   messages?: Message[];
   message?: string;
+  response?: CompleteResponse;
   stream?: ReadableStream<Uint8Array>;
   events?: ReadableStream<StreamEvent> | AsyncIterable<StreamEvent>;
   body?: Record<string, unknown>;
