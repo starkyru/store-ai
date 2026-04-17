@@ -291,7 +291,7 @@ The `validateSchema` middleware incrementally parses and validates JSON during s
 
 ## Migrating from `@ai-sdk-tools/store`
 
-### Overview
+### Why Migrate
 
 `@ai-sdk-tools/store` wraps the Vercel AI SDK with a Zustand-based store and React context provider. store-ai replaces this with a framework-agnostic core that works with any store (not just Zustand) and any framework (not just React).
 
@@ -301,7 +301,7 @@ Key differences:
 - **Direct store access.** Instead of custom hooks that read from context, you access the store directly.
 - **Middleware replaces missing features.** Features like persistence, cost tracking, and retry that `@ai-sdk-tools/store` doesn't support are available as composable middleware in store-ai.
 
-### Before / After
+### Setup Comparison
 
 **Before (`@ai-sdk-tools/store`):**
 

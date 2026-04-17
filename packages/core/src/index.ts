@@ -40,6 +40,10 @@ export type {
   DeepPartial,
 } from './types.js';
 
+// ── Message tree ──
+export { createMessageTree } from './message-tree.js';
+export type { MessageTree, MessageNode } from './message-tree.js';
+
 // ── Reducer (for testing / advanced usage) ──
 export { aiReducer, getInitialState } from './reducer.js';
 
@@ -66,6 +70,10 @@ export { retryOn } from './middleware/retry.js';
 export type { RetryOptions } from './middleware/retry.js';
 export { trackCost } from './middleware/track-cost.js';
 export type { ProviderPricing, CostInfo } from './middleware/track-cost.js';
+
+// ── Transports ──
+export { createWebSocketTransport, submitViaWebSocket } from './transports/websocket.js';
+export type { WebSocketTransportOptions } from './transports/websocket.js';
 
 // ── Storage adapters ──
 export { memoryStorage } from './storage/memory.js';
