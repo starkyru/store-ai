@@ -16,6 +16,15 @@ function isSerializedChat(v: unknown): v is SerializedChat {
   );
 }
 
+/**
+ * Browser `localStorage`-backed storage adapter with key prefixing.
+ *
+ * @param prefix - Key prefix for all entries. Defaults to `"store-ai"`.
+ *                 Keys are stored as `"<prefix>:<chatId>"`.
+ *
+ * Silently no-ops when `localStorage` is unavailable (SSR, Web Workers).
+ * Validates data shape on read to guard against tampered entries.
+ */
 export function localStorageAdapter(prefix?: string): StorageAdapter {
   const pfx = prefix ?? 'store-ai';
 

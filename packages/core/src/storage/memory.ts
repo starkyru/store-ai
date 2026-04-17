@@ -1,5 +1,9 @@
 import type { SerializedChat, StorageAdapter } from '../types.js';
 
+/**
+ * In-memory storage adapter backed by a `Map`. Useful for testing and
+ * short-lived sessions. Data does not survive page reloads.
+ */
 export function memoryStorage(): StorageAdapter {
   const store = new Map<string, SerializedChat>();
 

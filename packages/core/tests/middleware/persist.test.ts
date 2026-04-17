@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { createAIStore } from '../../src/store.js';
-import { persist } from '../../src/middleware/persist.js';
+import { persist, restoreChat, listChats, deleteChat } from '../../src/middleware/persist.js';
 import { memoryStorage } from '../../src/storage/memory.js';
 import type { StorageAdapter, StreamEvent } from '../../src/types.js';
 
@@ -143,6 +143,93 @@ describe('persist middleware', () => {
     expect(keys).toHaveLength(1);
     // UUID format check
     expect(keys[0]).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
+  });
+
+  it('restoreChat returns saved conversation', async () => {
+    const storage = memoryStorage();
+    const store = createAIStore({
+      batchStrategy: 'sync',
+      middleware: [persist(storage, 'restore-test')],
+    });
+
+    store.submit({ message: 'hi', events: textStream(['hello']) });
+    await waitForStream();
+
+    const saved = await restoreChat(storage, 'restore-test');
+    expect(saved).not.toBeNull();
+    expect(saved!.id).toBe('restore-test');
+    expect(saved!.messages.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('restoreChat returns null for missing chat', async () => {
+    const storage = memoryStorage();
+    const saved = await restoreChat(storage, 'nonexistent');
+    expect(saved).toBeNull();
+  });
+
+  it('restoreChat handles storage errors gracefully', async () => {
+    const failingStorage: StorageAdapter = {
+      async get() {
+        throw new Error('fail');
+      },
+      async set() {},
+      async delete() {},
+      async list() {
+        return [];
+      },
+    };
+    const saved = await restoreChat(failingStorage, 'x');
+    expect(saved).toBeNull();
+  });
+
+  it('listChats returns all chat IDs', async () => {
+    const storage = memoryStorage();
+    const s1 = createAIStore({ batchStrategy: 'sync', middleware: [persist(storage, 'a')] });
+    const s2 = createAIStore({ batchStrategy: 'sync', middleware: [persist(storage, 'b')] });
+
+    s1.submit({ events: textStream(['one']) });
+    s2.submit({ events: textStream(['two']) });
+    await waitForStream();
+
+    const ids = await listChats(storage);
+    expect(ids).toContain('a');
+    expect(ids).toContain('b');
+  });
+
+  it('deleteChat removes a conversation', async () => {
+    const storage = memoryStorage();
+    const store = createAIStore({
+      batchStrategy: 'sync',
+      middleware: [persist(storage, 'to-delete')],
+    });
+
+    store.submit({ events: textStream(['bye']) });
+    await waitForStream();
+    expect(await restoreChat(storage, 'to-delete')).not.toBeNull();
+
+    await deleteChat(storage, 'to-delete');
+    expect(await restoreChat(storage, 'to-delete')).toBeNull();
+  });
+
+  it('restoreChat + setMessages restores conversation into store', async () => {
+    const storage = memoryStorage();
+    const store1 = createAIStore({
+      batchStrategy: 'sync',
+      middleware: [persist(storage, 'full-restore')],
+    });
+
+    store1.submit({ message: 'hello', events: textStream(['world']) });
+    await waitForStream();
+
+    // New store, restore from storage
+    const store2 = createAIStore({ batchStrategy: 'sync' });
+    const saved = await restoreChat(storage, 'full-restore');
+    expect(saved).not.toBeNull();
+    expect(saved!.messages.length).toBeGreaterThanOrEqual(1);
+    store2.setMessages(saved!.messages);
+
+    expect(store2.get('messages').length).toBe(saved!.messages.length);
+    expect(store2.get('hasMessages')).toBe(true);
   });
 
   it('preserves createdAt on subsequent saves', async () => {

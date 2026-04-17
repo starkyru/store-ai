@@ -56,7 +56,7 @@ export type { LoggingOptions } from './middleware/logging.js';
 export { throttle } from './middleware/throttle.js';
 export { mapEvents } from './middleware/map-events.js';
 export { validateSchema } from './middleware/validate-schema.js';
-export { persist } from './middleware/persist.js';
+export { persist, restoreChat, listChats, deleteChat } from './middleware/persist.js';
 export { retryOn } from './middleware/retry.js';
 export type { RetryOptions } from './middleware/retry.js';
 export { trackCost } from './middleware/track-cost.js';

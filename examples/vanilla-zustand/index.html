@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>store-ai + Zustand (Vanilla)</title>
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family:
+          system-ui,
+          -apple-system,
+          sans-serif;
+        max-width: 640px;
+        margin: 0 auto;
+        padding: 2rem 1rem;
+        background: #fafafa;
+        color: #1a1a1a;
+      }
+
+      h1 {
+        font-size: 1.25rem;
+        margin: 0 0 1rem;
+      }
+
+      #status {
+        display: inline-block;
+        padding: 0.2rem 0.6rem;
+        border-radius: 4px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        margin-bottom: 1rem;
+        background: #e2e8f0;
+        color: #475569;
+      }
+
+      #status.status-streaming {
+        background: #dbeafe;
+        color: #1d4ed8;
+      }
+
+      #status.status-complete {
+        background: #dcfce7;
+        color: #15803d;
+      }
+
+      #status.status-error {
+        background: #fee2e2;
+        color: #b91c1c;
+      }
+
+      #status.status-aborted {
+        background: #fef3c7;
+        color: #92400e;
+      }
+
+      #messages {
+        min-height: 80px;
+        margin-bottom: 0.5rem;
+      }
+
+      .message {
+        padding: 0.5rem 0.75rem;
+        margin-bottom: 0.5rem;
+        border-radius: 6px;
+        font-size: 0.9rem;
+        line-height: 1.5;
+        white-space: pre-wrap;
+        word-break: break-word;
+      }
+
+      .message-user {
+        background: #e0e7ff;
+        color: #312e81;
+      }
+
+      .message-assistant {
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        color: #1a1a1a;
+      }
+
+      #streaming {
+        display: none;
+        padding: 0.5rem 0.75rem;
+        margin-bottom: 0.5rem;
+        border-radius: 6px;
+        background: #fff;
+        border: 1px dashed #93c5fd;
+        font-size: 0.9rem;
+        line-height: 1.5;
+        white-space: pre-wrap;
+        word-break: break-word;
+        color: #1e40af;
+      }
+
+      #chat-form {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+      }
+
+      #input {
+        flex: 1;
+        min-width: 180px;
+        padding: 0.5rem 0.75rem;
+        border: 1px solid #cbd5e1;
+        border-radius: 6px;
+        font-size: 0.9rem;
+        outline: none;
+      }
+
+      #input:focus {
+        border-color: #6366f1;
+        box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.15);
+      }
+
+      button {
+        padding: 0.5rem 1rem;
+        border: none;
+        border-radius: 6px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        cursor: pointer;
+      }
+
+      button[type='submit'] {
+        background: #4f46e5;
+        color: #fff;
+      }
+
+      button[type='submit']:hover {
+        background: #4338ca;
+      }
+
+      #abort-btn {
+        background: #ef4444;
+        color: #fff;
+      }
+
+      #abort-btn:hover:not(:disabled) {
+        background: #dc2626;
+      }
+
+      #abort-btn:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+      }
+
+      #reset-btn {
+        background: #64748b;
+        color: #fff;
+      }
+
+      #reset-btn:hover {
+        background: #475569;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>store-ai + Zustand (Vanilla JS)</h1>
+    <div id="status">idle</div>
+    <div id="messages"></div>
+    <div id="streaming"></div>
+    <form id="chat-form">
+      <input id="input" type="text" placeholder="Type a message..." autocomplete="off" />
+      <button type="submit">Send</button>
+      <button type="button" id="abort-btn" disabled>Abort</button>
+      <button type="button" id="reset-btn">Reset</button>
+    </form>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

@@ -1,5 +1,13 @@
 import type { SerializedChat, StorageAdapter } from '../types.js';
 
+/**
+ * IndexedDB-backed storage adapter for persistent chat storage.
+ *
+ * @param dbName - Database name. Defaults to `"store-ai"`.
+ *                 Uses an object store called `"chats"` with `id` as key path.
+ *
+ * Silently no-ops when IndexedDB is unavailable (SSR, some privacy modes).
+ */
 export function indexedDBAdapter(dbName?: string): StorageAdapter {
   const name = dbName ?? 'store-ai';
   const storeName = 'chats';
