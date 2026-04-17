@@ -445,6 +445,76 @@ const store = createAIStore({
 // Cost is available in middleware metadata after usage events
 ```
 
+### Resumable Streams
+
+Persist stream state so streaming can resume after disconnects:
+
+```typescript
+import { createAIStore, resumable, getStreamCheckpoint, memoryStorage } from '@store-ai/core';
+
+const storage = memoryStorage();
+const store = createAIStore({
+  middleware: [resumable({ storage, streamId: 'req-123' })],
+});
+
+// After a disconnect, check for a checkpoint
+const checkpoint = await getStreamCheckpoint(storage, 'req-123');
+if (checkpoint && !checkpoint.completed) {
+  // Replay saved events, then reconnect for the rest
+  store.submit({ events: checkpoint.events });
+}
+```
+
+### WebSocket Transport
+
+Stream from WebSocket servers instead of SSE:
+
+```typescript
+import { createAIStore, createWebSocketTransport } from '@store-ai/core';
+
+const store = createAIStore();
+const events = createWebSocketTransport({
+  url: 'wss://api.example.com/chat',
+  format: 'json', // or 'text'
+  onOpen: (ws) => ws.send(JSON.stringify({ prompt: 'Hello' })),
+});
+store.submit({ events });
+```
+
+### Worker Offloading
+
+Move stream parsing off the main thread:
+
+```typescript
+import { createAIStore, createWorkerStream } from '@store-ai/core';
+
+const store = createAIStore();
+const events = createWorkerStream({
+  worker: new Worker(new URL('./ai-worker.js', import.meta.url), { type: 'module' }),
+  stream: response.body!,
+  provider: 'anthropic',
+});
+store.submit({ events });
+```
+
+### Message Branching
+
+Tree-based conversation history with branch switching:
+
+```typescript
+import { createMessageTree } from '@store-ai/core';
+
+const tree = createMessageTree();
+tree.add(userMsg1); // root
+tree.add(assistantMsg1, userMsg1.id); // linear reply
+tree.add(assistantMsg2, userMsg1.id); // branch! second reply to same prompt
+
+tree.getSiblings(assistantMsg1.id); // [assistantMsg1, assistantMsg2]
+tree.getBranchIndex(assistantMsg1.id); // { current: 0, total: 2 }
+tree.switchBranch(assistantMsg1.id, 'next'); // switches to assistantMsg2
+tree.getActivePath(); // [userMsg1, assistantMsg2]
+```
+
 ---
 
 ## Store Adapters
@@ -686,6 +756,7 @@ parser.reset(); // clear state
 | `retryOn({ maxRetries, delay, filter? })`                             | Suppresses errors when retries remain, sets `_retry` metadata. Resets on success or terminal error.                    |
 | `trackCost({ inputCostPer1k, outputCostPer1k, reasoningCostPer1k? })` | Calculates costs from usage events, stores `CostInfo` in `ctx.metadata.get('cost')`.                                   |
 | `mapEvents(fn)`                                                       | Transform or filter events. Return `null` to suppress, return a new event to replace.                                  |
+| `resumable({ storage, streamId })`                                    | Persists stream events to storage for resume after disconnect. Use `getStreamCheckpoint()` to restore.                 |
 
 ### Built-in Storage Adapters
 
@@ -702,22 +773,29 @@ parser.reset(); // clear state
 | `anthropic()`       | Anthropic SSE (message_start, content_block_delta, ...) |
 | `openai()`          | OpenAI Chat Completions SSE                             |
 | `openaiResponses()` | OpenAI Responses API SSE                                |
+| `aiSdkDataStream()` | Vercel AI SDK UI Message Stream protocol                |
+| `agUI()`            | AG-UI protocol (16 event types for agent UIs)           |
 
 ---
 
 ## Packages
 
-| Package                | Description                                          | Peer Dependencies   |
-| ---------------------- | ---------------------------------------------------- | ------------------- |
-| `@store-ai/core`       | Core store, pipeline, middleware, providers, parsers | None                |
-| `@store-ai/zustand`    | Zustand adapter                                      | `zustand >= 4`      |
-| `@store-ai/jotai`      | Jotai adapter                                        | `jotai >= 2`        |
-| `@store-ai/nanostores` | Nanostores adapter                                   | `nanostores >= 0.9` |
-| `@store-ai/valtio`     | Valtio adapter                                       | `valtio >= 1`       |
-| `@store-ai/react`      | React hooks                                          | `react >= 18`       |
-| `@store-ai/vue`        | Vue composables                                      | `vue >= 3`          |
-| `@store-ai/svelte`     | Svelte stores                                        | `svelte >= 4`       |
-| `@store-ai/solid`      | Solid signals                                        | `solid-js >= 1`     |
+| Package                | Description                                          | Peer Dependencies            |
+| ---------------------- | ---------------------------------------------------- | ---------------------------- |
+| `@store-ai/core`       | Core store, pipeline, middleware, providers, parsers | None                         |
+| `@store-ai/zustand`    | Zustand adapter                                      | `zustand >= 4`               |
+| `@store-ai/jotai`      | Jotai adapter                                        | `jotai >= 2`                 |
+| `@store-ai/nanostores` | Nanostores adapter                                   | `nanostores >= 0.9`          |
+| `@store-ai/valtio`     | Valtio adapter                                       | `valtio >= 1`                |
+| `@store-ai/redux`      | Redux Toolkit adapter                                | `@reduxjs/toolkit >= 2`      |
+| `@store-ai/tanstack`   | @tanstack/store adapter                              | `@tanstack/store >= 0.5`     |
+| `@store-ai/react`      | React hooks                                          | `react >= 18`                |
+| `@store-ai/vue`        | Vue composables                                      | `vue >= 3`                   |
+| `@store-ai/svelte`     | Svelte stores                                        | `svelte >= 4`                |
+| `@store-ai/solid`      | Solid signals                                        | `solid-js >= 1`              |
+| `@store-ai/preact`     | Preact hooks                                         | `preact >= 10`               |
+| `@store-ai/angular`    | Angular signals                                      | `@angular/core >= 16`        |
+| `@store-ai/lit`        | Lit ReactiveController                               | `@lit/reactive-element >= 2` |
 
 ---
 
@@ -726,11 +804,11 @@ parser.reset(); // clear state
 | Feature                   | store-ai    | Vercel AI SDK | @ai-sdk-tools/store | assistant-ui  |
 | ------------------------- | ----------- | ------------- | ------------------- | ------------- |
 | Framework-agnostic core   | Yes         | No            | No                  | Partial       |
-| Multiple store adapters   | 4 stores    | None          | Zustand only        | Internal only |
+| Multiple store adapters   | 6 stores    | None          | Zustand only        | Internal only |
 | Middleware pipeline       | Yes         | No            | No                  | No            |
 | Structured output         | Yes (Zod)   | Yes           | No                  | Yes           |
 | Thinking/reasoning tokens | Yes         | Yes           | Delegated           | Yes           |
-| Multi-chat manager        | Planned     | No            | Partial             | Unstable      |
+| Multi-chat manager        | Yes         | No            | Partial             | Unstable      |
 | Test suite                | Yes         | Yes           | None                | Some          |
 | Zero dependencies (core)  | Yes         | No            | No                  | No            |
 | Tool call state           | First-class | Yes           | Delegated           | Yes           |

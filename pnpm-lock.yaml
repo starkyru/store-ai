@@ -157,6 +157,24 @@ importers:
         specifier: ^3.0.0
         version: 3.2.4(yaml@2.8.3)
 
+  packages/lit:
+    devDependencies:
+      '@lit/reactive-element':
+        specifier: ^2.0.0
+        version: 2.1.2
+      '@store-ai/core':
+        specifier: workspace:*
+        version: link:../core
+      tsup:
+        specifier: ^8.3.0
+        version: 8.5.1(postcss@8.5.10)(typescript@5.9.3)(yaml@2.8.3)
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+      vitest:
+        specifier: ^3.0.0
+        version: 3.2.4(yaml@2.8.3)
+
   packages/nanostores:
     devDependencies:
       '@store-ai/core':
@@ -759,6 +777,12 @@ packages:
 
   '@jridgewell/trace-mapping@0.3.31':
     resolution: {integrity: sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw==}
+
+  '@lit-labs/ssr-dom-shim@1.5.1':
+    resolution: {integrity: sha512-Aou5UdlSpr5whQe8AA/bZG0jMj96CoJIWbGfZ91qieWu5AWUMKw8VR/pAkQkJYvBNhmCcWnZlyyk5oze8JIqYA==}
+
+  '@lit/reactive-element@2.1.2':
+    resolution: {integrity: sha512-pbCDiVMnne1lYUIaYNN5wrwQXDtHaYtg7YEFPeW+hws6U47WeFvISGUWekPGKWOP1ygrs0ef0o1VJMk1exos5A==}
 
   '@reduxjs/toolkit@2.11.2':
     resolution: {integrity: sha512-Kd6kAHTA6/nUpp8mySPqj3en3dm0tdMIgbttnQ1xFMVpufoj+ADi8pXLBsd4xzTRHQa7t/Jv8W5UnCuW4kuWMQ==}
@@ -2111,6 +2135,12 @@ snapshots:
     dependencies:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.5
+
+  '@lit-labs/ssr-dom-shim@1.5.1': {}
+
+  '@lit/reactive-element@2.1.2':
+    dependencies:
+      '@lit-labs/ssr-dom-shim': 1.5.1
 
   '@reduxjs/toolkit@2.11.2(react@19.2.5)':
     dependencies:

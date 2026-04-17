@@ -20,6 +20,10 @@ export default defineConfig({
         { text: 'Structured Output', link: '/guide/structured-output' },
         { text: 'Persistence', link: '/guide/persistence' },
         { text: 'Multi-Chat', link: '/guide/multi-chat' },
+        { text: 'Resumable Streams', link: '/guide/resumable-streams' },
+        { text: 'WebSocket Transport', link: '/guide/websocket-transport' },
+        { text: 'Worker Offloading', link: '/guide/worker-offloading' },
+        { text: 'Message Branching', link: '/guide/message-branching' },
       ],
       '/api/': [
         { text: 'Core', link: '/api/core' },

@@ -58,6 +58,7 @@ export { anthropic } from './providers/anthropic.js';
 export { openai } from './providers/openai.js';
 export { openaiResponses } from './providers/openai-responses.js';
 export { aiSdkDataStream } from './providers/ai-sdk-data-stream.js';
+export { agUI } from './providers/ag-ui.js';
 
 // ── Built-in middleware ──
 export { logging } from './middleware/logging.js';
@@ -68,12 +69,20 @@ export { validateSchema } from './middleware/validate-schema.js';
 export { persist, restoreChat, listChats, deleteChat } from './middleware/persist.js';
 export { retryOn } from './middleware/retry.js';
 export type { RetryOptions } from './middleware/retry.js';
+export { resumable, getStreamCheckpoint, deleteStreamCheckpoint } from './middleware/resumable.js';
+export type { ResumableOptions, StreamCheckpoint } from './middleware/resumable.js';
 export { trackCost } from './middleware/track-cost.js';
 export type { ProviderPricing, CostInfo } from './middleware/track-cost.js';
 
 // ── Transports ──
 export { createWebSocketTransport, submitViaWebSocket } from './transports/websocket.js';
 export type { WebSocketTransportOptions } from './transports/websocket.js';
+
+// ── Worker offloading ──
+export { createWorkerStream } from './worker/create-worker-stream.js';
+export { setupWorkerHandler } from './worker/worker-handler.js';
+export type { WorkerStreamOptions } from './worker/create-worker-stream.js';
+export type { WorkerRequest, WorkerResponse } from './worker/types.js';
 
 // ── Storage adapters ──
 export { memoryStorage } from './storage/memory.js';

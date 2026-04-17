@@ -176,17 +176,19 @@
 
 ---
 
-## Future (Post v1.0)
+## Post v1.0 — COMPLETE
 
-Ideas for future exploration:
+- [x] **WebSocket transport** — `createWebSocketTransport()` + `submitViaWebSocket()` with json/text formats, abort propagation
+- [x] **Resumable streams** — `resumable()` middleware persists stream events, `getStreamCheckpoint()` / `deleteStreamCheckpoint()` for restore
+- [x] **Message branching** — `createMessageTree()` with branch switching, sibling navigation, export/import
+- [x] **Worker offloading** — `createWorkerStream()` + `setupWorkerHandler()` for main-thread/worker split
+- [x] **@store-ai/preact** — Hooks via `preact/hooks` (no `preact/compat`)
+- [x] **@store-ai/angular** — Signals-based `useAI()` + `toObservable()` with `DestroyRef` cleanup
+- [x] **@store-ai/lit** — `AIController` implementing `ReactiveController`
+- [x] **AG-UI protocol provider** — `agUI()` mapping all 16 event types to StreamEvent
 
-- [ ] **WebSocket transport** — Alternative to SSE for bidirectional communication
-- [ ] **Resumable streams** — Persist stream position, resume after disconnect
-- [ ] **Message branching** — Tree-based message history with branch switching
+## Future Ideas
+
 - [ ] **Generative UI mapping** — Map tool calls to UI components declaratively
-- [ ] **Worker offloading** — Run stream parsing in a Web Worker, send state updates to main thread
 - [ ] **DevTools** — Browser extension for inspecting store state, stream events, middleware pipeline
-- [ ] **@store-ai/preact** — Preact adapter
-- [ ] **@store-ai/angular** — Angular adapter (signals-based)
-- [ ] **@store-ai/lit** — Lit adapter (ReactiveController)
-- [ ] **AG-UI protocol provider** — Consume AG-UI event streams (16 event types → StreamEvent)
+- [ ] **Server adapters** — Node.js/Deno adapters for server-to-server AI stream consumption

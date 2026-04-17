@@ -18,6 +18,6 @@ features:
     details: Logging, validation, persistence, retry, cost tracking — all composable.
   - title: 6 Store Adapters
     details: Zustand, Jotai, Nanostores, Valtio, Redux, TanStack — or vanilla.
-  - title: 4 Framework Adapters
-    details: React, Vue, Svelte, Solid — first-class hooks for each.
+  - title: 7 Framework Adapters
+    details: React, Vue, Svelte, Solid, Preact, Angular, Lit — first-class bindings for each.
 ---
