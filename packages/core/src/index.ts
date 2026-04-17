@@ -41,7 +41,15 @@ export { aiReducer, getInitialState } from './reducer.js';
 
 // ── Parsers ──
 export { createSSEParser } from './parsers/sse.js';
+export { createNDJSONParser } from './parsers/ndjson.js';
 
 // ── Provider adapters ──
 export { anthropic } from './providers/anthropic.js';
 export { openai } from './providers/openai.js';
+export { openaiResponses } from './providers/openai-responses.js';
+
+// ── Built-in middleware ──
+export { logging } from './middleware/logging.js';
+export type { LoggingOptions } from './middleware/logging.js';
+export { throttle } from './middleware/throttle.js';
+export { mapEvents } from './middleware/map-events.js';
