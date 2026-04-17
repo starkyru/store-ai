@@ -1,0 +1,58 @@
+{
+  "name": "@store-ai/core",
+  "version": "0.0.0",
+  "description": "Framework-agnostic, store-agnostic AI stream state management",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "build": "tsup",
+    "test": "vitest run",
+    "test:watch": "vitest watch",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist .turbo"
+  },
+  "devDependencies": {
+    "tsup": "^8.3.0",
+    "typescript": "^5.7.0",
+    "vitest": "^3.0.0"
+  },
+  "peerDependencies": {
+    "zod": ">=3.22"
+  },
+  "peerDependenciesMeta": {
+    "zod": {
+      "optional": true
+    }
+  },
+  "keywords": [
+    "ai",
+    "streaming",
+    "state-management",
+    "zustand",
+    "jotai",
+    "nanostores",
+    "llm",
+    "openai",
+    "anthropic",
+    "sse"
+  ],
+  "license": "MIT"
+}
