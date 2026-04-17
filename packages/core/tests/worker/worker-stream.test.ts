@@ -367,7 +367,7 @@ describe('createWorkerStream', () => {
 
     await iterator.return!();
 
-    expect(mockWorker.listenerCount).toBeLessThan(initialListenerCount);
+    expect(mockWorker.listenerCount).toBe(0);
   });
 
   it('cleans up listener after natural completion', async () => {
@@ -388,5 +388,67 @@ describe('createWorkerStream', () => {
     await collectEvents(iterable);
 
     expect(mockWorker.listenerCount).toBe(0);
+  });
+
+  it('idempotent cleanup on double return', async () => {
+    const stream = createReadableStream([]);
+    const streamId = 'test-double-return';
+
+    const iterable = createWorkerStream({
+      worker: mockWorker as unknown as Worker,
+      stream,
+      provider: 'anthropic',
+      streamId,
+    });
+
+    mockWorker.simulateMessage({ type: 'done', streamId });
+    await flush();
+
+    const iterator = iterable[Symbol.asyncIterator]();
+    await iterator.return!();
+    // Second return should be a harmless no-op
+    await iterator.return!();
+
+    expect(mockWorker.listenerCount).toBe(0);
+  });
+
+  it('silently drops worker events with invalid type', async () => {
+    const stream = createReadableStream([]);
+    const streamId = 'test-invalid-event';
+
+    const iterable = createWorkerStream({
+      worker: mockWorker as unknown as Worker,
+      stream,
+      provider: 'anthropic',
+      streamId,
+    });
+
+    await flush();
+
+    // Valid event
+    mockWorker.simulateMessage({
+      type: 'event',
+      streamId,
+      event: { type: 'text-delta', text: 'valid' },
+    });
+    // Invalid event type — should be silently dropped
+    mockWorker.simulateMessage({
+      type: 'event',
+      streamId,
+      event: { type: 'injected-xss-type', payload: '<script>alert(1)</script>' } as any,
+    });
+    // Another valid event, then done
+    mockWorker.simulateMessage({
+      type: 'event',
+      streamId,
+      event: { type: 'finish', reason: 'stop' },
+    });
+    mockWorker.simulateMessage({ type: 'done', streamId });
+
+    const events = await collectEvents(iterable);
+
+    expect(events).toHaveLength(2);
+    expect(events[0]).toEqual({ type: 'text-delta', text: 'valid' });
+    expect(events[1]).toEqual({ type: 'finish', reason: 'stop' });
   });
 });

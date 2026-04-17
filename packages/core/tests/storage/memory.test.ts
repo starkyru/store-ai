@@ -64,6 +64,24 @@ describe('memoryStorage', () => {
     expect(keys).toEqual([]);
   });
 
+  it('round-trips non-chat unknown values', async () => {
+    const storage = memoryStorage();
+
+    // Stream checkpoint shape
+    const checkpoint = {
+      streamId: 'test',
+      events: [{ type: 'text-delta', text: 'hi' }],
+      completed: true,
+      lastEventAt: new Date().toISOString(),
+    };
+    await storage.set('stream:test', checkpoint);
+    expect(await storage.get('stream:test')).toEqual(checkpoint);
+
+    // Primitive
+    await storage.set('primitive', 42 as unknown);
+    expect(await storage.get('primitive')).toBe(42);
+  });
+
   it('set overwrites existing entry', async () => {
     const storage = memoryStorage();
     const chat1 = makeChat('overwrite');

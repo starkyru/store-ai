@@ -207,6 +207,45 @@ describe('resumable middleware', () => {
     }
   });
 
+  it('getStreamCheckpoint returns null for corrupted checkpoint data', async () => {
+    const storage = memoryStorage();
+
+    // Completely wrong shape
+    await storage.set('stream:corrupt-1', { foo: 'bar' });
+    expect(await getStreamCheckpoint(storage, 'corrupt-1')).toBeNull();
+
+    // Missing required fields
+    await storage.set('stream:corrupt-2', { streamId: 'corrupt-2', events: [] });
+    expect(await getStreamCheckpoint(storage, 'corrupt-2')).toBeNull();
+
+    // events contains invalid items
+    await storage.set('stream:corrupt-3', {
+      streamId: 'corrupt-3',
+      events: [42, 'not-an-event', null],
+      completed: true,
+      lastEventAt: new Date().toISOString(),
+    });
+    expect(await getStreamCheckpoint(storage, 'corrupt-3')).toBeNull();
+
+    // events contain objects with unknown type
+    await storage.set('stream:corrupt-4', {
+      streamId: 'corrupt-4',
+      events: [{ type: 'totally-fake-type', data: 'bad' }],
+      completed: true,
+      lastEventAt: new Date().toISOString(),
+    });
+    expect(await getStreamCheckpoint(storage, 'corrupt-4')).toBeNull();
+  });
+
+  it('rejects invalid streamId format', () => {
+    const storage = memoryStorage();
+
+    expect(() => resumable({ storage, streamId: '../traversal' })).toThrow('Invalid streamId');
+    expect(() => resumable({ storage, streamId: 'has spaces' })).toThrow('Invalid streamId');
+    expect(() => resumable({ storage, streamId: 'ok-id:req-1' })).not.toThrow();
+    expect(() => resumable({ storage, streamId: 'simple_id.v2' })).not.toThrow();
+  });
+
   it('storage failures do not crash the stream', async () => {
     const failingStorage: StorageAdapter = {
       async get() {

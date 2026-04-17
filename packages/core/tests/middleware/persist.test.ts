@@ -172,6 +172,57 @@ describe('persist middleware', () => {
     expect(saved).toBeNull();
   });
 
+  it('restoreChat returns null for malformed objects', async () => {
+    const storage = memoryStorage();
+
+    // Missing required fields
+    await storage.set('bad-1', { id: 'bad-1' });
+    expect(await restoreChat(storage, 'bad-1')).toBeNull();
+
+    // Wrong types
+    await storage.set('bad-2', { id: 123, messages: 'not-array', createdAt: 0, updatedAt: 0 });
+    expect(await restoreChat(storage, 'bad-2')).toBeNull();
+
+    // Stream checkpoint shape (not a chat)
+    await storage.set('bad-3', {
+      streamId: 'bad-3',
+      events: [{ type: 'text-delta', text: 'x' }],
+      completed: true,
+      lastEventAt: new Date().toISOString(),
+    });
+    expect(await restoreChat(storage, 'bad-3')).toBeNull();
+  });
+
+  it('persist.save uses fresh createdAt when existing value is non-chat', async () => {
+    const storage = memoryStorage();
+
+    // Pre-populate key with a non-chat value
+    await storage.set('overwrite-test', {
+      streamId: 'x',
+      events: [],
+      completed: true,
+      lastEventAt: new Date().toISOString(),
+    });
+
+    const store = createAIStore({
+      batchStrategy: 'sync',
+      middleware: [persist(storage, 'overwrite-test')],
+    });
+
+    store.submit({ events: textStream(['hello']) });
+    await waitForStream();
+
+    const saved = (await storage.get('overwrite-test')) as {
+      id: string;
+      createdAt: string;
+      updatedAt: string;
+    } | null;
+    expect(saved).not.toBeNull();
+    expect(saved!.id).toBe('overwrite-test');
+    // createdAt should be freshly generated, not inherited from the garbage value
+    expect(saved!.createdAt).toBe(saved!.updatedAt);
+  });
+
   it('restoreChat handles storage errors gracefully', async () => {
     const failingStorage: StorageAdapter = {
       async get() {

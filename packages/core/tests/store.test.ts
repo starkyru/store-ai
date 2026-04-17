@@ -267,6 +267,21 @@ describe('createAIStore', () => {
   });
 
   describe('abort handling', () => {
+    it('pre-aborted signal causes immediate abort', async () => {
+      const store = createAIStore({ batchStrategy: 'sync' });
+      const controller = new AbortController();
+      controller.abort();
+
+      store.submit({
+        signal: controller.signal,
+        events: textStream(['should', 'not', 'appear']),
+      });
+      await waitForStream();
+
+      expect(store.get('status')).toBe('aborted');
+      expect(store.get('text')).toBe('');
+    });
+
     it('does not apply raw stream chunks that arrive after abort', async () => {
       const store = createAIStore({ batchStrategy: 'sync' });
       const encoder = new TextEncoder();
@@ -435,6 +450,16 @@ describe('createAIStore', () => {
 
   // 10. reset()
   describe('reset()', () => {
+    it('clears lastInput so retry throws after reset', async () => {
+      const store = createAIStore({ batchStrategy: 'sync' });
+
+      store.submit({ events: textStream(['data']) });
+      await waitForStream();
+
+      store.reset();
+      expect(() => store.retry()).toThrow('No previous submission to retry');
+    });
+
     it('returns to initial state after streaming', async () => {
       const store = createAIStore({ batchStrategy: 'sync' });
 
@@ -468,6 +493,16 @@ describe('createAIStore', () => {
 
   // 11. destroy()
   describe('destroy()', () => {
+    it('clears lastInput so retry throws after destroy', async () => {
+      const store = createAIStore({ batchStrategy: 'sync' });
+
+      store.submit({ events: textStream(['data']) });
+      await waitForStream();
+
+      store.destroy();
+      expect(() => store.retry()).toThrow('No previous submission to retry');
+    });
+
     it('no more notifications fire after destroy', async () => {
       const store = createAIStore({ batchStrategy: 'sync' });
       const listener = vi.fn();

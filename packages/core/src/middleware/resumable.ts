@@ -1,4 +1,5 @@
 import type { MiddlewareContext, MiddlewareObject, StorageAdapter, StreamEvent } from '../types.js';
+import { STREAM_EVENT_TYPES } from '../types.js';
 
 export interface ResumableOptions {
   /** Storage adapter for persisting stream state */
@@ -19,14 +20,13 @@ export interface StreamCheckpoint {
 
 const STORAGE_PREFIX = 'stream:';
 const FLUSH_INTERVAL = 10;
+const MAX_BUFFERED_EVENTS = 5000;
+const VALID_STREAM_ID = /^[\w.:-]+$/;
 
 function isStreamEvent(value: unknown): value is StreamEvent {
-  return (
-    value !== null &&
-    typeof value === 'object' &&
-    !Array.isArray(value) &&
-    typeof (value as Record<string, unknown>)['type'] === 'string'
-  );
+  if (value === null || typeof value !== 'object' || Array.isArray(value)) return false;
+  const type = (value as Record<string, unknown>)['type'];
+  return typeof type === 'string' && STREAM_EVENT_TYPES.has(type);
 }
 
 function isStreamCheckpoint(value: unknown): value is StreamCheckpoint {
@@ -115,6 +115,12 @@ export async function deleteStreamCheckpoint(
  * ```
  */
 export function resumable(opts: ResumableOptions): MiddlewareObject {
+  if (!VALID_STREAM_ID.test(opts.streamId)) {
+    throw new Error(
+      `Invalid streamId "${opts.streamId}": must match ${VALID_STREAM_ID} (alphanumeric, dots, colons, hyphens, underscores)`,
+    );
+  }
+
   const events: StreamEvent[] = [];
   let eventCount = 0;
 
@@ -129,6 +135,12 @@ export function resumable(opts: ResumableOptions): MiddlewareObject {
     async onEvent(ctx: MiddlewareContext, next: () => Promise<void>) {
       events.push(ctx.event);
       eventCount++;
+
+      // Prevent unbounded memory growth on long-running streams
+      if (events.length > MAX_BUFFERED_EVENTS) {
+        events.splice(0, events.length - MAX_BUFFERED_EVENTS);
+      }
+
       await next();
 
       // Flush on finish event (after next() so the reducer has processed it).

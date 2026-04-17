@@ -1,5 +1,18 @@
 import type { AIState, StoreAction, ToolCallState } from './types.js';
 
+const PROTO_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
+
+function sanitizePartial(obj: unknown): unknown {
+  if (obj === null || typeof obj !== 'object') return obj;
+  if (Array.isArray(obj)) return obj.map(sanitizePartial);
+  const clean: Record<string, unknown> = {};
+  for (const key of Object.keys(obj as Record<string, unknown>)) {
+    if (PROTO_KEYS.has(key)) continue;
+    clean[key] = sanitizePartial((obj as Record<string, unknown>)[key]);
+  }
+  return clean;
+}
+
 export function getInitialState<T = unknown>(): AIState<T> {
   return {
     status: 'idle',
@@ -115,7 +128,7 @@ export function aiReducer<T>(state: AIState<T>, action: StoreAction): AIState<T>
     case 'stream/object-delta': {
       return {
         ...state,
-        partialObject: action.partial as AIState<T>['partialObject'],
+        partialObject: sanitizePartial(action.partial) as AIState<T>['partialObject'],
       };
     }
 

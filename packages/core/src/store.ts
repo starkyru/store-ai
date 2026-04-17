@@ -104,6 +104,7 @@ export function createAIStore<T = unknown>(options?: AIStoreOptions<T>): AIStore
 
   let activeAbort: AbortController | null = null;
   let lastInput: SubmitInput | null = null;
+  let externalSignalCleanup: (() => void) | null = null;
 
   function notify() {
     if (notificationPending) return;
@@ -293,6 +294,8 @@ export function createAIStore<T = unknown>(options?: AIStoreOptions<T>): AIStore
     if (activeAbort) {
       activeAbort.abort();
     }
+    externalSignalCleanup?.();
+    externalSignalCleanup = null;
 
     const controller = new AbortController();
     activeAbort = controller;
@@ -300,7 +303,13 @@ export function createAIStore<T = unknown>(options?: AIStoreOptions<T>): AIStore
 
     // Compose with external signal
     if (input.signal) {
-      input.signal.addEventListener('abort', () => controller.abort(), { once: true });
+      if (input.signal.aborted) {
+        controller.abort();
+      } else {
+        const onExternalAbort = () => controller.abort();
+        input.signal.addEventListener('abort', onExternalAbort, { once: true });
+        externalSignalCleanup = () => input.signal!.removeEventListener('abort', onExternalAbort);
+      }
     }
 
     // Append user message if provided as shorthand
@@ -403,6 +412,9 @@ export function createAIStore<T = unknown>(options?: AIStoreOptions<T>): AIStore
         activeAbort.abort();
         activeAbort = null;
       }
+      externalSignalCleanup?.();
+      externalSignalCleanup = null;
+      lastInput = null;
       dispatch({ type: 'reset' });
     },
 
@@ -440,6 +452,9 @@ export function createAIStore<T = unknown>(options?: AIStoreOptions<T>): AIStore
         activeAbort.abort();
         activeAbort = null;
       }
+      externalSignalCleanup?.();
+      externalSignalCleanup = null;
+      lastInput = null;
       listeners.clear();
       keyListeners.clear();
       middlewares.length = 0;

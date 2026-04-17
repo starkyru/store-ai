@@ -114,6 +114,21 @@ export type StreamEvent =
 
 export type FinishReason = 'stop' | 'tool-calls' | 'length' | 'error';
 
+export const STREAM_EVENT_TYPES: ReadonlySet<string> = new Set([
+  'text-delta',
+  'thinking-delta',
+  'tool-call-start',
+  'tool-call-delta',
+  'tool-call-end',
+  'object-delta',
+  'usage',
+  'metadata',
+  'error',
+  'finish',
+  'step-start',
+  'step-end',
+]);
+
 // ── Store actions (internal reducer) ──
 
 export type StoreAction =

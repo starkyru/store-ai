@@ -29,7 +29,11 @@ export function localStorageAdapter(prefix?: string): StorageAdapter {
       try {
         const raw = localStorage.getItem(prefixedKey(key));
         if (raw === null) return null;
-        return JSON.parse(raw) as unknown;
+        const parsed: unknown = JSON.parse(raw);
+        // Reject non-object values — defence-in-depth against same-origin
+        // scripts or browser extensions writing unexpected primitives/arrays.
+        if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) return null;
+        return parsed;
       } catch {
         return null;
       }

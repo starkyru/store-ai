@@ -1,4 +1,5 @@
 import type { StreamEvent } from '../types.js';
+import { STREAM_EVENT_TYPES } from '../types.js';
 import type { WorkerRequest, WorkerResponse } from './types.js';
 
 export interface WorkerStreamOptions {
@@ -85,6 +86,16 @@ export function createWorkerStream(options: WorkerStreamOptions): AsyncIterable<
     worker.postMessage(msg, transfer ?? []);
   }
 
+  function isValidWorkerEvent(event: unknown): event is StreamEvent {
+    return (
+      event !== null &&
+      typeof event === 'object' &&
+      !Array.isArray(event) &&
+      typeof (event as Record<string, unknown>)['type'] === 'string' &&
+      STREAM_EVENT_TYPES.has((event as Record<string, unknown>)['type'] as string)
+    );
+  }
+
   // Listen for messages from the worker
   function onMessage(e: MessageEvent<WorkerResponse>): void {
     const msg = e.data;
@@ -92,7 +103,9 @@ export function createWorkerStream(options: WorkerStreamOptions): AsyncIterable<
 
     switch (msg.type) {
       case 'event':
-        enqueueEvent(msg.event);
+        if (isValidWorkerEvent(msg.event)) {
+          enqueueEvent(msg.event);
+        }
         break;
       case 'error':
         enqueueEvent({ type: 'error', error: new Error(msg.message) });
@@ -116,7 +129,7 @@ export function createWorkerStream(options: WorkerStreamOptions): AsyncIterable<
     if (signal.aborted) {
       onAbort();
     } else {
-      signal.addEventListener('abort', onAbort);
+      signal.addEventListener('abort', onAbort, { once: true });
     }
   }
 

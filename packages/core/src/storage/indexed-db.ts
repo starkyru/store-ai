@@ -59,6 +59,7 @@ export function indexedDBAdapter(dbName?: string): StorageAdapter {
       (db) =>
         new Promise<T>((resolve, reject) => {
           const tx = db.transaction(storeName, mode);
+          tx.onabort = () => db.close();
           const objStore = tx.objectStore(storeName);
           const request = fn(objStore);
 
