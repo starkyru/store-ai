@@ -2,13 +2,13 @@
 
 ## What is store-ai?
 
-store-ai is a framework-agnostic, store-agnostic AI stream state management library for TypeScript. It sits between your AI streaming API and your UI framework:
+store-ai is a framework-agnostic, store-agnostic AI state management library for TypeScript. It sits between your AI API and your UI framework, handling both streaming and non-streaming responses:
 
 ```
-Stream (SSE/NDJSON) -> Pipeline (middleware) -> Core Store -> Store Adapter -> Framework Adapter -> UI
+Stream or Response -> Pipeline (middleware) -> Core Store -> Store Adapter -> Framework Adapter -> UI
 ```
 
-You provide the stream. store-ai manages the state. You choose your store and framework.
+You provide the stream (or a complete response). store-ai manages the state. You choose your store and framework.
 
 ## Installation
 
@@ -171,6 +171,39 @@ function App() {
   return <p>{state().text}</p>;
 }
 ```
+
+## Quick Start: Non-Streaming (Request-Response)
+
+If your backend returns a complete response instead of streaming, use `response`:
+
+```typescript
+import { createAIStore } from '@store-ai/core';
+
+const store = createAIStore();
+
+// Call your API
+const result = await fetch('/api/chat', {
+  method: 'POST',
+  body: JSON.stringify({ message: 'Show me cats' }),
+}).then((r) => r.json());
+
+// Feed the complete response — no streaming needed
+store.submit({
+  message: 'Show me cats',
+  response: {
+    text: result.text,
+    object: result.structuredData,
+    usage: { inputTokens: result.usage.input, outputTokens: result.usage.output },
+  },
+});
+
+// Subscribe as normal — status goes idle → streaming → complete instantly
+store.subscribe('text', (text) => {
+  document.getElementById('output')!.textContent = text;
+});
+```
+
+All middleware (persistence, logging, cost tracking, etc.) works identically with non-streaming responses.
 
 ## Next Steps
 

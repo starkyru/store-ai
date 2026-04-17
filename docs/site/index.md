@@ -2,8 +2,8 @@
 layout: home
 hero:
   name: store-ai
-  text: AI Stream State Management
-  tagline: Framework-agnostic. Store-agnostic. Middleware-first.
+  text: AI State Management
+  tagline: Streaming and non-streaming. Framework-agnostic. Store-agnostic. Middleware-first.
   actions:
     - theme: brand
       text: Get Started

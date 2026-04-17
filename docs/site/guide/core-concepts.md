@@ -130,16 +130,25 @@ Key-specific subscriptions use shallow comparison and only fire when the selecte
 
 ## Submitting Requests
 
-Use `store.submit()` to start a stream:
+Use `store.submit()` to start a stream or process a complete response:
 
 ```typescript
-// Simple message
+// Streaming — pass a byte stream
 store.submit({
   message: 'Hello',
   stream: response.body,
 });
 
-// Full conversation
+// Non-streaming — pass a complete response object
+store.submit({
+  message: 'Hello',
+  response: {
+    text: 'Hi there!',
+    usage: { inputTokens: 10, outputTokens: 5 },
+  },
+});
+
+// Full conversation (streaming)
 store.submit({
   messages: [
     { role: 'system', content: [{ type: 'text', text: 'You are helpful.' }] },
@@ -155,6 +164,23 @@ store.submit({
 ```
 
 `submit()` returns a `StreamHandle` with `abort()` and `signal` for cancellation control.
+
+### Non-Streaming Responses
+
+The `response` field accepts a `CompleteResponse` object for request-response APIs that return a full result at once:
+
+```typescript
+interface CompleteResponse {
+  text?: string;
+  thinking?: string;
+  toolCalls?: { id: string; name: string; input: unknown }[];
+  object?: DeepPartial<unknown> | null;
+  usage?: Partial<TokenUsage>;
+  finishReason?: FinishReason;
+}
+```
+
+Internally, the response is converted to stream events and flows through the same middleware pipeline and reducer. This means persistence, logging, cost tracking, and all other middleware works identically regardless of whether the response was streamed or complete.
 
 ## Notification Batching
 

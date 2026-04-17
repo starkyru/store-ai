@@ -33,6 +33,7 @@ export type {
   MiddlewareContext,
   StreamHandle,
   SubmitInput,
+  CompleteResponse,
   StoreAdapterResult,
   StorageAdapter,
   SerializedChat,

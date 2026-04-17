@@ -43,20 +43,56 @@ const unsub = store.subscribe('text', (text, prevText) => { ... });
 
 ## `store.submit(input)`
 
-Start a new stream. Returns a `StreamHandle` with `abort()` and `signal`.
+Start a new stream or process a complete response. Returns a `StreamHandle` with `abort()` and `signal`.
 
 ```typescript
 interface SubmitInput {
   messages?: Message[];
   message?: string;
+  response?: CompleteResponse;
   stream?: ReadableStream;
+  events?: ReadableStream<StreamEvent> | AsyncIterable<StreamEvent>;
   body?: Record<string, unknown>;
   signal?: AbortSignal;
   headers?: Record<string, string>;
 }
 
-store.submit({ message: 'Hello', stream: response.body });
+interface CompleteResponse {
+  text?: string;
+  thinking?: string;
+  toolCalls?: { id: string; name: string; input: unknown }[];
+  object?: DeepPartial<unknown> | null;
+  usage?: Partial<TokenUsage>;
+  finishReason?: FinishReason;
+}
 ```
+
+### Streaming
+
+```typescript
+// With a provider adapter (parses SSE)
+store.submit({ message: 'Hello', stream: response.body });
+
+// Direct events (skip parsing)
+store.submit({ events: myAsyncGenerator() });
+```
+
+### Non-streaming
+
+```typescript
+// Complete response — no streaming needed
+store.submit({
+  message: 'Hello',
+  response: {
+    text: 'Hi there!',
+    toolCalls: [{ id: 'tc-1', name: 'search', input: { q: 'cats' } }],
+    object: { items: [{ name: 'cat' }] },
+    usage: { inputTokens: 100, outputTokens: 50 },
+  },
+});
+```
+
+The `response` is internally converted to stream events, so all middleware (persistence, logging, cost tracking) works identically.
 
 ## `store.abort()`
 

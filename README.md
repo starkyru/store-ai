@@ -1,15 +1,15 @@
 # store-ai
 
-Framework-agnostic, store-agnostic AI stream state management for TypeScript.
+Framework-agnostic, store-agnostic AI state management for TypeScript.
 
 ```
 npm install @store-ai/core
 ```
 
-store-ai sits between your AI streaming API and your UI framework. It consumes any AI stream (OpenAI, Anthropic, Vercel AI SDK, or raw SSE), processes it through a composable middleware pipeline, and exposes reactive state through the store of your choice (Zustand, Jotai, Nanostores, Redux, Valtio, or vanilla).
+store-ai sits between your AI API and your UI framework. It handles both **streaming** (SSE, NDJSON, WebSocket) and **non-streaming** (request-response) AI interactions, processes them through a composable middleware pipeline, and exposes reactive state through the store of your choice (Zustand, Jotai, Nanostores, Redux, Valtio, or vanilla).
 
 ```
-Stream (SSE/NDJSON) → Pipeline (middleware) → Core Store → Store Adapter → Framework Adapter → UI
+Stream or Response → Pipeline (middleware) → Core Store → Store Adapter → Framework Adapter → UI
 ```
 
 ## Why?
@@ -229,6 +229,34 @@ store.submit({
   events: myAsyncGenerator(),
 });
 ```
+
+### Non-Streaming (Request-Response)
+
+Not every AI interaction is streamed. If your backend returns a complete response (e.g., structured text + images from a NestJS service), use `response` instead of `stream`:
+
+```typescript
+const store = createAIStore();
+
+// Your backend returns a complete response — no streaming needed
+const result = await fetch('/api/chat', {
+  method: 'POST',
+  body: JSON.stringify({ message: 'Show me cats' }),
+}).then((r) => r.json());
+
+store.submit({
+  message: 'Show me cats',
+  response: {
+    text: result.text,
+    object: result.structuredData,
+    usage: { inputTokens: result.usage.input, outputTokens: result.usage.output },
+  },
+});
+
+// State transitions: idle → streaming → complete (instantly)
+// All middleware (persistence, logging, etc.) still runs
+```
+
+The `CompleteResponse` object supports all the same fields as streaming — text, thinking, tool calls, structured objects, and usage — they're just delivered at once. Middleware, persistence, and all framework/store adapters work identically.
 
 ### Middleware
 
@@ -719,11 +747,20 @@ const unsub = store.subscribe('text', (text, prevText) => { ... });
 
 ### `store.submit(input)`
 
-Start a new stream. Returns a `StreamHandle` with `abort()` and `signal`.
+Start a new stream or process a complete response. Returns a `StreamHandle` with `abort()` and `signal`.
 
 ```typescript
-// Simple text message
-store.submit({ message: 'Hello' });
+// Simple text message (with streaming)
+store.submit({ message: 'Hello', stream: response.body });
+
+// Non-streaming response
+store.submit({
+  message: 'Hello',
+  response: {
+    text: 'Hi there!',
+    usage: { inputTokens: 10, outputTokens: 5 },
+  },
+});
 
 // Full conversation
 store.submit({
@@ -731,12 +768,11 @@ store.submit({
     { role: 'system', content: [{ type: 'text', text: 'You are helpful.' }] },
     { role: 'user', content: [{ type: 'text', text: 'Hello' }] },
   ],
+  stream: response.body,
 });
 
 // Bring your own stream
-store.submit({
-  stream: response.body,
-});
+store.submit({ stream: response.body });
 
 // With abort signal
 const controller = new AbortController();
@@ -857,6 +893,7 @@ parser.reset(); // clear state
 | ------------------------- | ----------- | ------------- | ------------------- | ------------- |
 | Framework-agnostic core   | Yes         | No            | No                  | Partial       |
 | Multiple store adapters   | 6 stores    | None          | Zustand only        | Internal only |
+| Streaming + non-streaming | Both        | Streaming     | Streaming           | Streaming     |
 | Middleware pipeline       | Yes         | No            | No                  | No            |
 | Structured output         | Yes (Zod)   | Yes           | No                  | Yes           |
 | Thinking/reasoning tokens | Yes         | Yes           | Delegated           | Yes           |
