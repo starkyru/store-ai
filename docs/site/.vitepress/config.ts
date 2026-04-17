@@ -24,6 +24,8 @@ export default defineConfig({
         { text: 'WebSocket Transport', link: '/guide/websocket-transport' },
         { text: 'Worker Offloading', link: '/guide/worker-offloading' },
         { text: 'Message Branching', link: '/guide/message-branching' },
+        { text: 'Generative UI', link: '/guide/generative-ui' },
+        { text: 'DevTools', link: '/guide/devtools' },
       ],
       '/api/': [
         { text: 'Core', link: '/api/core' },

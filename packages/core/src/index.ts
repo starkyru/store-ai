@@ -63,6 +63,8 @@ export { agUI } from './providers/ag-ui.js';
 // ── Built-in middleware ──
 export { logging } from './middleware/logging.js';
 export type { LoggingOptions } from './middleware/logging.js';
+export { devtools } from './middleware/devtools.js';
+export type { DevToolsEvent, DevToolsInspector, DevToolsOptions } from './middleware/devtools.js';
 export { throttle } from './middleware/throttle.js';
 export { mapEvents } from './middleware/map-events.js';
 export { validateSchema } from './middleware/validate-schema.js';
@@ -83,6 +85,10 @@ export { createWorkerStream } from './worker/create-worker-stream.js';
 export { setupWorkerHandler } from './worker/worker-handler.js';
 export type { WorkerStreamOptions } from './worker/create-worker-stream.js';
 export type { WorkerRequest, WorkerResponse } from './worker/types.js';
+
+// ── Generative UI ──
+export { createUIRegistry, connectUI } from './generative-ui.js';
+export type { UIElement, ToolRenderer, UIRegistry } from './generative-ui.js';
 
 // ── Storage adapters ──
 export { memoryStorage } from './storage/memory.js';

@@ -515,6 +515,57 @@ tree.switchBranch(assistantMsg1.id, 'next'); // switches to assistantMsg2
 tree.getActivePath(); // [userMsg1, assistantMsg2]
 ```
 
+### Generative UI
+
+Map tool calls to UI component descriptors declaratively:
+
+```typescript
+import { createUIRegistry, connectUI } from '@store-ai/core';
+
+const registry = createUIRegistry();
+
+registry.register('get_weather', (tc) => ({
+  component: 'WeatherCard',
+  props: { city: (tc.input as any)?.city, data: tc.output },
+  loading: tc.status === 'pending' || tc.status === 'partial',
+  toolCall: tc,
+}));
+
+// Fallback for unregistered tools
+registry.setFallback((tc) => ({
+  component: 'GenericToolCall',
+  props: { name: tc.name, input: tc.input, output: tc.output },
+  loading: tc.status !== 'complete',
+  toolCall: tc,
+}));
+
+// Connect to store — reactive UIElement[] updates
+const { getElements, destroy } = connectUI(store, registry);
+```
+
+### DevTools
+
+Record and inspect stream events for debugging:
+
+```typescript
+import { createAIStore, devtools } from '@store-ai/core';
+
+const { middleware, inspector } = devtools({
+  maxEvents: 500,
+  exposeGlobal: true, // sets window.__STORE_AI_DEVTOOLS__
+  name: 'main-chat',
+});
+
+const store = createAIStore({ middleware: [middleware] });
+
+// After streaming, inspect events:
+inspector.getEvents(); // DevToolsEvent[] with timestamps and state snapshots
+inspector.getEventsByType('text-delta'); // filter by type
+inspector.getDuration(); // stream duration in ms
+inspector.getEventsPerSecond(); // throughput
+inspector.export(); // JSON string for sharing/logging
+```
+
 ---
 
 ## Store Adapters
@@ -757,6 +808,7 @@ parser.reset(); // clear state
 | `trackCost({ inputCostPer1k, outputCostPer1k, reasoningCostPer1k? })` | Calculates costs from usage events, stores `CostInfo` in `ctx.metadata.get('cost')`.                                   |
 | `mapEvents(fn)`                                                       | Transform or filter events. Return `null` to suppress, return a new event to replace.                                  |
 | `resumable({ storage, streamId })`                                    | Persists stream events to storage for resume after disconnect. Use `getStreamCheckpoint()` to restore.                 |
+| `devtools({ maxEvents?, exposeGlobal?, name? })`                      | Records events with timestamps + state snapshots. Returns `inspector` API for querying.                                |
 
 ### Built-in Storage Adapters
 

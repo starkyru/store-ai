@@ -187,8 +187,11 @@
 - [x] **@store-ai/lit** — `AIController` implementing `ReactiveController`
 - [x] **AG-UI protocol provider** — `agUI()` mapping all 16 event types to StreamEvent
 
+## Additional Features — COMPLETE
+
+- [x] **Generative UI mapping** — `createUIRegistry()` + `connectUI()` for declarative tool-call-to-component mapping
+- [x] **DevTools middleware** — `devtools()` records events with timestamps + state snapshots, `inspector` API for querying
+
 ## Future Ideas
 
-- [ ] **Generative UI mapping** — Map tool calls to UI components declaratively
-- [ ] **DevTools** — Browser extension for inspecting store state, stream events, middleware pipeline
 - [ ] **Server adapters** — Node.js/Deno adapters for server-to-server AI stream consumption
