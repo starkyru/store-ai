@@ -266,6 +266,42 @@ describe('createAIStore', () => {
     });
   });
 
+  describe('abort handling', () => {
+    it('does not apply raw stream chunks that arrive after abort', async () => {
+      const store = createAIStore({ batchStrategy: 'sync' });
+      const encoder = new TextEncoder();
+
+      const stream = new ReadableStream<Uint8Array>({
+        start(controller) {
+          setTimeout(() => {
+            try {
+              controller.enqueue(encoder.encode('late'));
+            } catch {
+              // The store cancels the stream on abort; ignore late producer writes.
+            }
+          }, 20);
+          setTimeout(() => {
+            try {
+              controller.close();
+            } catch {
+              // Ignore close after cancellation.
+            }
+          }, 40);
+        },
+      });
+
+      store.submit({ stream });
+      setTimeout(() => {
+        store.abort();
+      }, 5);
+
+      await waitForStream(80);
+
+      expect(store.get('status')).toBe('aborted');
+      expect(store.get('text')).toBe('');
+    });
+  });
+
   // 7. submit() with events
   describe('submit() with events', () => {
     it('transitions idle -> streaming -> text accumulates -> complete', async () => {

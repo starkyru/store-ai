@@ -6,6 +6,17 @@ import type {
   StorageAdapter,
 } from '../types.js';
 
+function isSerializedChat(value: unknown): value is SerializedChat {
+  if (value === null || typeof value !== 'object' || Array.isArray(value)) return false;
+  const obj = value as Record<string, unknown>;
+  return (
+    typeof obj['id'] === 'string' &&
+    Array.isArray(obj['messages']) &&
+    typeof obj['createdAt'] === 'string' &&
+    typeof obj['updatedAt'] === 'string'
+  );
+}
+
 /**
  * Persistence middleware that saves messages to storage on stream completion
  * and can restore previously saved conversations.
@@ -40,7 +51,7 @@ export function persist(storage: StorageAdapter, chatId?: string): MiddlewareObj
       await storage.set(id, {
         id,
         messages: state.messages,
-        createdAt: existing?.createdAt ?? now,
+        createdAt: isSerializedChat(existing) ? existing.createdAt : now,
         updatedAt: now,
       });
     } catch {
@@ -91,7 +102,8 @@ export async function restoreChat(
   chatId: string,
 ): Promise<SerializedChat | null> {
   try {
-    return await storage.get(chatId);
+    const value = await storage.get(chatId);
+    return isSerializedChat(value) ? value : null;
   } catch {
     return null;
   }
@@ -104,7 +116,11 @@ export async function restoreChat(
  */
 export async function listChats(storage: StorageAdapter): Promise<string[]> {
   try {
-    return await storage.list();
+    const keys = await storage.list();
+    const entries = await Promise.all(
+      keys.map(async (key) => ({ key, value: await storage.get(key) })),
+    );
+    return entries.filter((entry) => isSerializedChat(entry.value)).map((entry) => entry.key);
   } catch {
     return [];
   }

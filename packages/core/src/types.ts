@@ -226,8 +226,8 @@ export interface SerializedChat {
 }
 
 export interface StorageAdapter {
-  get(key: string): Promise<SerializedChat | null>;
-  set(key: string, value: SerializedChat): Promise<void>;
+  get(key: string): Promise<unknown | null>;
+  set(key: string, value: unknown): Promise<void>;
   delete(key: string): Promise<void>;
   list(): Promise<string[]>;
 }

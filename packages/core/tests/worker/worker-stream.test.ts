@@ -369,4 +369,24 @@ describe('createWorkerStream', () => {
 
     expect(mockWorker.listenerCount).toBeLessThan(initialListenerCount);
   });
+
+  it('cleans up listener after natural completion', async () => {
+    const stream = createReadableStream([]);
+    const streamId = 'test-natural-cleanup';
+
+    const iterable = createWorkerStream({
+      worker: mockWorker as unknown as Worker,
+      stream,
+      provider: 'anthropic',
+      streamId,
+    });
+
+    await flush();
+    expect(mockWorker.listenerCount).toBeGreaterThan(0);
+
+    mockWorker.simulateMessage({ type: 'done', streamId });
+    await collectEvents(iterable);
+
+    expect(mockWorker.listenerCount).toBe(0);
+  });
 });

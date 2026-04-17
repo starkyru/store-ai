@@ -20,6 +20,27 @@ export interface StreamCheckpoint {
 const STORAGE_PREFIX = 'stream:';
 const FLUSH_INTERVAL = 10;
 
+function isStreamEvent(value: unknown): value is StreamEvent {
+  return (
+    value !== null &&
+    typeof value === 'object' &&
+    !Array.isArray(value) &&
+    typeof (value as Record<string, unknown>)['type'] === 'string'
+  );
+}
+
+function isStreamCheckpoint(value: unknown): value is StreamCheckpoint {
+  if (value === null || typeof value !== 'object' || Array.isArray(value)) return false;
+  const obj = value as Record<string, unknown>;
+  return (
+    typeof obj['streamId'] === 'string' &&
+    Array.isArray(obj['events']) &&
+    obj['events'].every(isStreamEvent) &&
+    typeof obj['completed'] === 'boolean' &&
+    typeof obj['lastEventAt'] === 'string'
+  );
+}
+
 async function flush(
   storage: StorageAdapter,
   streamId: string,
@@ -33,9 +54,7 @@ async function flush(
       completed,
       lastEventAt: new Date().toISOString(),
     };
-    // StorageAdapter is typed for SerializedChat, but we store StreamCheckpoint
-    // using the same key-value mechanism. The cast is intentional.
-    await storage.set(`${STORAGE_PREFIX}${streamId}`, checkpoint as any);
+    await storage.set(`${STORAGE_PREFIX}${streamId}`, checkpoint);
   } catch {
     // Storage failures are non-fatal — never crash the stream
   }
@@ -63,9 +82,7 @@ export async function getStreamCheckpoint(
 ): Promise<StreamCheckpoint | null> {
   try {
     const data = await storage.get(`${STORAGE_PREFIX}${streamId}`);
-    if (!data) return null;
-    // Data was stored as StreamCheckpoint via the cast above
-    return data as unknown as StreamCheckpoint;
+    return isStreamCheckpoint(data) ? data : null;
   } catch {
     return null;
   }

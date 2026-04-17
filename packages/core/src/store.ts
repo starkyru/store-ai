@@ -229,14 +229,28 @@ export function createAIStore<T = unknown>(options?: AIStoreOptions<T>): AIStore
       if ('getReader' in eventSource) {
         // ReadableStream path
         const reader = eventSource.getReader();
+        const onAbort = () => {
+          // Cancel the underlying stream so pending reads resolve promptly.
+          void reader.cancel().catch(() => {
+            // Ignore cancellation failures from already-closed streams.
+          });
+        };
+
+        if (signal.aborted) {
+          onAbort();
+        } else {
+          signal.addEventListener('abort', onAbort, { once: true });
+        }
+
         try {
           while (true) {
             if (signal.aborted) break;
             const { done, value } = await reader.read();
-            if (done) break;
+            if (done || signal.aborted) break;
             await runMiddleware(value);
           }
         } finally {
+          signal.removeEventListener('abort', onAbort);
           reader.releaseLock();
         }
       } else {

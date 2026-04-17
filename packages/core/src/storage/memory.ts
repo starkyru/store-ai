@@ -1,18 +1,18 @@
-import type { SerializedChat, StorageAdapter } from '../types.js';
+import type { StorageAdapter } from '../types.js';
 
 /**
  * In-memory storage adapter backed by a `Map`. Useful for testing and
  * short-lived sessions. Data does not survive page reloads.
  */
 export function memoryStorage(): StorageAdapter {
-  const store = new Map<string, SerializedChat>();
+  const store = new Map<string, unknown>();
 
   return {
-    async get(key: string): Promise<SerializedChat | null> {
+    async get(key: string): Promise<unknown | null> {
       return store.get(key) ?? null;
     },
 
-    async set(key: string, value: SerializedChat): Promise<void> {
+    async set(key: string, value: unknown): Promise<void> {
       store.set(key, value);
     },
 

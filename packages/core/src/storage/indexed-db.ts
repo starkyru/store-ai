@@ -1,4 +1,19 @@
-import type { SerializedChat, StorageAdapter } from '../types.js';
+import type { StorageAdapter } from '../types.js';
+
+interface StoredRecord {
+  id: string;
+  value: unknown;
+}
+
+function isStoredRecord(value: unknown): value is StoredRecord {
+  return (
+    value !== null &&
+    typeof value === 'object' &&
+    !Array.isArray(value) &&
+    typeof (value as Record<string, unknown>)['id'] === 'string' &&
+    'value' in (value as Record<string, unknown>)
+  );
+}
 
 /**
  * IndexedDB-backed storage adapter for persistent chat storage.
@@ -60,22 +75,21 @@ export function indexedDBAdapter(dbName?: string): StorageAdapter {
   }
 
   return {
-    async get(key: string): Promise<SerializedChat | null> {
+    async get(key: string): Promise<unknown | null> {
       if (!isAvailable()) return null;
       try {
-        const result = await withStore<SerializedChat | undefined>('readonly', (store) =>
-          store.get(key),
-        );
-        return result ?? null;
+        const result = await withStore<unknown>('readonly', (store) => store.get(key));
+        if (result === undefined) return null;
+        return isStoredRecord(result) ? result.value : result;
       } catch {
         return null;
       }
     },
 
-    async set(_key: string, value: SerializedChat): Promise<void> {
+    async set(key: string, value: unknown): Promise<void> {
       if (!isAvailable()) return;
       try {
-        await withStore('readwrite', (store) => store.put(value));
+        await withStore('readwrite', (store) => store.put({ id: key, value }));
       } catch {
         // Silently ignore
       }

@@ -6,6 +6,7 @@ import {
   deleteStreamCheckpoint,
 } from '../../src/middleware/resumable.js';
 import { memoryStorage } from '../../src/storage/memory.js';
+import { localStorageAdapter } from '../../src/storage/local-storage.js';
 import type { StorageAdapter, StreamEvent } from '../../src/types.js';
 
 // ── Helpers ──
@@ -156,6 +157,54 @@ describe('resumable middleware', () => {
     // The replayed store should have the same text content
     expect(store2.get('text')).toBe('world!');
     expect(store2.get('status')).toBe('complete');
+  });
+
+  it('retrieves checkpoints through localStorageAdapter', async () => {
+    const originalLocalStorage = globalThis.localStorage;
+    const storageMap = new Map<string, string>();
+    const mockLocalStorage = {
+      getItem(key: string) {
+        return storageMap.has(key) ? storageMap.get(key)! : null;
+      },
+      setItem(key: string, value: string) {
+        storageMap.set(key, value);
+      },
+      removeItem(key: string) {
+        storageMap.delete(key);
+      },
+      key(index: number) {
+        return Array.from(storageMap.keys())[index] ?? null;
+      },
+      get length() {
+        return storageMap.size;
+      },
+    };
+
+    Object.defineProperty(globalThis, 'localStorage', {
+      configurable: true,
+      value: mockLocalStorage,
+    });
+
+    try {
+      const storage = localStorageAdapter('resume-test');
+      const store = createAIStore({
+        batchStrategy: 'sync',
+        middleware: [resumable({ storage, streamId: 'local-storage-test' })],
+      });
+
+      store.submit({ events: textStream(['saved']) });
+      await waitForStream();
+
+      const checkpoint = await getStreamCheckpoint(storage, 'local-storage-test');
+      expect(checkpoint).not.toBeNull();
+      expect(checkpoint!.completed).toBe(true);
+      expect(checkpoint!.events).toHaveLength(2);
+    } finally {
+      Object.defineProperty(globalThis, 'localStorage', {
+        configurable: true,
+        value: originalLocalStorage,
+      });
+    }
   });
 
   it('storage failures do not crash the stream', async () => {

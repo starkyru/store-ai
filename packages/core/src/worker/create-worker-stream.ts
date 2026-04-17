@@ -47,6 +47,7 @@ export function createWorkerStream(options: WorkerStreamOptions): AsyncIterable<
   const queue: QueueEntry[] = [];
   let resolve: ((entry: QueueEntry) => void) | null = null;
   let done = false;
+  let cleanedUp = false;
 
   function enqueue(entry: QueueEntry): void {
     if (done && !entry.done) return;
@@ -63,9 +64,19 @@ export function createWorkerStream(options: WorkerStreamOptions): AsyncIterable<
     enqueue({ value: event, done: false });
   }
 
+  function cleanup(): void {
+    if (cleanedUp) return;
+    cleanedUp = true;
+    worker.removeEventListener('message', onMessage);
+    if (signal) {
+      signal.removeEventListener('abort', onAbort);
+    }
+  }
+
   function end(): void {
     if (done) return;
     done = true;
+    cleanup();
     enqueue({ value: undefined, done: true });
   }
 
@@ -105,7 +116,7 @@ export function createWorkerStream(options: WorkerStreamOptions): AsyncIterable<
     if (signal.aborted) {
       onAbort();
     } else {
-      signal.addEventListener('abort', onAbort, { once: true });
+      signal.addEventListener('abort', onAbort);
     }
   }
 
@@ -172,8 +183,7 @@ export function createWorkerStream(options: WorkerStreamOptions): AsyncIterable<
         },
 
         return(): Promise<IteratorResult<StreamEvent>> {
-          done = true;
-          worker.removeEventListener('message', onMessage);
+          end();
           return Promise.resolve({ value: undefined, done: true });
         },
       };

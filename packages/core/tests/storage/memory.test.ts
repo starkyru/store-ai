@@ -72,7 +72,7 @@ describe('memoryStorage', () => {
     await storage.set('overwrite', chat1);
     await storage.set('overwrite', chat2);
 
-    const result = await storage.get('overwrite');
+    const result = (await storage.get('overwrite')) as SerializedChat | null;
     expect(result!.updatedAt).toBe('later');
   });
 });

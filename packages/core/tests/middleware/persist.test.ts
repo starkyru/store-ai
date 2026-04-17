@@ -30,7 +30,12 @@ describe('persist middleware', () => {
     store.submit({ message: 'hello', events: textStream(['world']) });
     await waitForStream();
 
-    const saved = await storage.get('chat-1');
+    const saved = (await storage.get('chat-1')) as {
+      id: string;
+      messages: unknown[];
+      createdAt: string;
+      updatedAt: string;
+    } | null;
     expect(saved).not.toBeNull();
     expect(saved!.id).toBe('chat-1');
     expect(saved!.messages.length).toBeGreaterThanOrEqual(1);
@@ -124,7 +129,7 @@ describe('persist middleware', () => {
     store.submit({ events: textStream(['test']) });
     await waitForStream();
 
-    const saved = await storage.get('my-custom-id');
+    const saved = (await storage.get('my-custom-id')) as { id: string } | null;
     expect(saved).not.toBeNull();
     expect(saved!.id).toBe('my-custom-id');
   });
@@ -196,6 +201,27 @@ describe('persist middleware', () => {
     expect(ids).toContain('b');
   });
 
+  it('listChats excludes non-chat records stored in the same adapter', async () => {
+    const storage = memoryStorage();
+    const store = createAIStore({
+      batchStrategy: 'sync',
+      middleware: [persist(storage, 'chat-only')],
+    });
+
+    store.submit({ events: textStream(['hello']) });
+    await waitForStream();
+
+    await storage.set('stream:chat-only:req-1', {
+      streamId: 'chat-only:req-1',
+      events: [{ type: 'text-delta', text: 'partial' }],
+      completed: false,
+      lastEventAt: new Date().toISOString(),
+    });
+
+    const ids = await listChats(storage);
+    expect(ids).toEqual(['chat-only']);
+  });
+
   it('deleteChat removes a conversation', async () => {
     const storage = memoryStorage();
     const store = createAIStore({
@@ -242,14 +268,20 @@ describe('persist middleware', () => {
     store.submit({ events: textStream(['first']) });
     await waitForStream();
 
-    const firstSave = await storage.get('chat-multi');
+    const firstSave = (await storage.get('chat-multi')) as {
+      createdAt: string;
+      updatedAt: string;
+    } | null;
     const originalCreatedAt = firstSave!.createdAt;
 
     // Second stream
     store.submit({ events: textStream(['second']) });
     await waitForStream();
 
-    const secondSave = await storage.get('chat-multi');
+    const secondSave = (await storage.get('chat-multi')) as {
+      createdAt: string;
+      updatedAt: string;
+    } | null;
     expect(secondSave!.createdAt).toBe(originalCreatedAt);
     expect(secondSave!.updatedAt).not.toBe(secondSave!.createdAt);
   });
