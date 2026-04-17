@@ -2,6 +2,10 @@
 export { createAIStore } from './store.js';
 export type { AIStore } from './store.js';
 
+// ── Chat manager ──
+export { createChatManager } from './chat-manager.js';
+export type { ChatManager, ChatManagerOptions } from './chat-manager.js';
+
 // ── Types ──
 export type {
   AIState,
@@ -49,6 +53,7 @@ export type { PartialJSONParser } from './parsers/partial-json.js';
 export { anthropic } from './providers/anthropic.js';
 export { openai } from './providers/openai.js';
 export { openaiResponses } from './providers/openai-responses.js';
+export { aiSdkDataStream } from './providers/ai-sdk-data-stream.js';
 
 // ── Built-in middleware ──
 export { logging } from './middleware/logging.js';
