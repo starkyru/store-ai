@@ -16,6 +16,7 @@
     "dev": "turbo run dev",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
+    "publish:all": "turbo run build && pnpm -r publish --access public",
     "prepare": "husky"
   },
   "lint-staged": {
