@@ -3,6 +3,8 @@ import { defineConfig } from 'vitepress';
 export default defineConfig({
   title: 'store-ai',
   description: 'Framework-agnostic AI stream state management',
+  head: [['link', { rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' }]],
+  lastUpdated: true,
   themeConfig: {
     nav: [
       { text: 'Guide', link: '/guide/getting-started' },
@@ -45,6 +47,17 @@ export default defineConfig({
         },
       ],
     },
-    socialLinks: [{ icon: 'github', link: 'https://github.com/example/store-ai' }],
+    socialLinks: [{ icon: 'github', link: 'https://github.com/starkyru/store-ai' }],
+    search: {
+      provider: 'local',
+    },
+    editLink: {
+      pattern: 'https://github.com/starkyru/store-ai/edit/main/docs/site/:path',
+      text: 'Edit this page on GitHub',
+    },
+    footer: {
+      message: 'Released under the MIT License.',
+      copyright: 'Copyright 2026',
+    },
   },
 });

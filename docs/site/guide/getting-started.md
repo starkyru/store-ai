@@ -34,6 +34,9 @@ npm install @store-ai/react       # React hooks
 npm install @store-ai/vue         # Vue composables
 npm install @store-ai/svelte      # Svelte stores
 npm install @store-ai/solid       # Solid signals
+npm install @store-ai/preact      # Preact hooks
+npm install @store-ai/angular     # Angular signals
+npm install @store-ai/lit         # Lit ReactiveController
 ```
 
 You don't need both a store adapter and a framework adapter. Use whichever fits your architecture. The core package works on its own with vanilla `subscribe()` calls.
