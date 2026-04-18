@@ -35,4 +35,4 @@ jobs:
           echo "$KNOWN_HOSTS" > ~/.ssh/known_hosts
           rsync -avz --delete -e "ssh -i ~/.ssh/deploy_key" \
             docs/site/.vitepress/dist/ \
-            root@ilia.to:/home/ilia/apps/store-ai-docs/
+            ilia@ilia.to:/home/ilia/apps/store-ai-docs/
