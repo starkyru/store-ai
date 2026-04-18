@@ -16,7 +16,7 @@ const registry = createUIRegistry();
 registry.register('get_weather', (toolCall) => ({
   component: 'WeatherCard',
   props: {
-    city: (toolCall.input as any)?.city,
+    city: toolCall.input?.['city'],
     forecast: toolCall.output,
   },
   loading: toolCall.status === 'pending' || toolCall.status === 'partial',
@@ -25,7 +25,7 @@ registry.register('get_weather', (toolCall) => ({
 
 registry.register('search', (toolCall) => ({
   component: 'SearchResults',
-  props: { query: (toolCall.input as any)?.query, results: toolCall.output },
+  props: { query: toolCall.input?.['query'], results: toolCall.output },
   loading: toolCall.status !== 'complete',
   toolCall,
 }));

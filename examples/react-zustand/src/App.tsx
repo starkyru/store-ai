@@ -23,8 +23,8 @@ function sendMessage(text: string) {
 function MessageBubble({ msg }: { msg: Message }) {
   const isUser = msg.role === 'user';
   const text = msg.content
-    .filter((c) => c.type === 'text')
-    .map((c) => (c as { type: 'text'; text: string }).text)
+    .filter((c): c is { type: 'text'; text: string } => c.type === 'text')
+    .map((c) => c.text)
     .join('');
 
   return (

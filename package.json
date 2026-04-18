@@ -17,6 +17,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "publish:all": "turbo run build && pnpm -r publish --access public",
+    "deploy:docs": "pnpm --filter store-ai-docs run build && rsync -avz --delete docs/site/.vitepress/dist/ ilia-root:/home/ilia/apps/store-ai-docs/",
     "prepare": "husky"
   },
   "lint-staged": {

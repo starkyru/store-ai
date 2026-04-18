@@ -554,7 +554,7 @@ const registry = createUIRegistry();
 
 registry.register('get_weather', (tc) => ({
   component: 'WeatherCard',
-  props: { city: (tc.input as any)?.city, data: tc.output },
+  props: { city: tc.input?.['city'], data: tc.output },
   loading: tc.status === 'pending' || tc.status === 'partial',
   toolCall: tc,
 }));

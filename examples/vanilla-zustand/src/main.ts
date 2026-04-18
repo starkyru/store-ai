@@ -17,10 +17,10 @@ const { store: zStore } = toZustand(aiStore);
 const statusEl = document.getElementById('status')!;
 const messagesEl = document.getElementById('messages')!;
 const streamingEl = document.getElementById('streaming')!;
-const form = document.getElementById('chat-form') as HTMLFormElement;
-const input = document.getElementById('input') as HTMLInputElement;
-const abortBtn = document.getElementById('abort-btn') as HTMLButtonElement;
-const resetBtn = document.getElementById('reset-btn') as HTMLButtonElement;
+const form = document.querySelector<HTMLFormElement>('#chat-form')!;
+const input = document.querySelector<HTMLInputElement>('#input')!;
+const abortBtn = document.querySelector<HTMLButtonElement>('#abort-btn')!;
+const resetBtn = document.querySelector<HTMLButtonElement>('#reset-btn')!;
 
 // ── Canned responses for the mock stream ──
 
