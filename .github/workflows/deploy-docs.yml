@@ -24,6 +24,9 @@ jobs:
 
       - run: pnpm --filter store-ai-docs run build
 
+      - name: Verify build output
+        run: test -f docs/site/.vitepress/dist/index.html || (echo "Build output missing" && exit 1)
+
       - name: Deploy to VPS
         env:
           SSH_KEY: ${{ secrets.VPS_SSH_KEY }}

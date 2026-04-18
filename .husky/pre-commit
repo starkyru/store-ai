@@ -1,3 +1,8 @@
 pnpm exec lint-staged
 pnpm run typecheck
 pnpm run test
+
+# Verify docs build if docs files changed
+if git diff --cached --name-only | grep -q '^docs/site/'; then
+  pnpm --filter store-ai-docs run build
+fi
